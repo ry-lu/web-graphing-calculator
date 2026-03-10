@@ -130,61 +130,85 @@ const solve = (req, res) => {
  */
 const intersections = (req, res) => {
     try {
-        const { expr1, expr2, variable = 'x', assignments = "" } = req.body;
+        const { exprs, expr1, expr2, variable = 'x', assignments = "" } = req.body;
         const scopeEnv = parseScope(assignments);
-        const intersectionExpr = `(${expr1}) - (${expr2})`;
+        const points = [];
 
-        const compiled = math.compile(intersectionExpr);
-        const f = (val) => {
-            let scope = { ...scopeEnv }; scope[variable] = val;
-            return compiled.evaluate(scope);
-        };
-        const fPrimeExpr = math.derivative(intersectionExpr, variable).toString();
-        const compiledPrime = math.compile(fPrimeExpr);
-        const fPrime = (val) => {
-            let scope = { ...scopeEnv }; scope[variable] = val;
-            return compiledPrime.evaluate(scope);
-        };
-
-        const roots = [];
-        const numSamples = 200;
-        const start = -10, end = 10;
-        const step = (end - start) / numSamples;
-        let prevSign = null;
-
-        for (let i = 0; i <= numSamples; i++) {
-            const x = start + i * step;
-            const y = f(x);
-            const sign = Math.sign(y);
-
-            if (prevSign !== null && sign !== prevSign && sign !== 0) {
-                let root = x - step / 2;
-                let iter = 0;
-                while (Math.abs(f(root)) > 1e-7 && iter < 100) {
-                    let df = fPrime(root);
-                    if (df === 0) break;
-                    root = root - f(root) / df;
-                    iter++;
-                }
-                if (Math.abs(f(root)) <= 1e-5) {
-                    if (!roots.some(r => Math.abs(r - root) < 1e-4)) {
-                        roots.push(root);
-                    }
-                }
-            } else if (Math.abs(y) <= 1e-7) {
-                if (!roots.some(r => Math.abs(r - x) < 1e-4)) {
-                    roots.push(x);
-                }
-            }
-            prevSign = sign !== 0 ? sign : prevSign;
+        let targetExprs = exprs;
+        if (!targetExprs) {
+            targetExprs = [expr1, expr2].filter(Boolean);
         }
 
-        const points = roots.map(root => {
-            let scope = {}; scope[variable] = root;
-            return { x: root, y: math.evaluate(expr1, scope) };
+        if (targetExprs.length < 2) {
+            return res.status(400).json({ error: "At least two expressions are required." });
+        }
+
+        for (let i = 0; i < targetExprs.length; i++) {
+            for (let j = i + 1; j < targetExprs.length; j++) {
+                const ex1 = targetExprs[i];
+                const ex2 = targetExprs[j];
+                const intersectionExpr = `(${ex1}) - (${ex2})`;
+
+                const compiled = math.compile(intersectionExpr);
+                const f = (val) => {
+                    let scope = { ...scopeEnv }; scope[variable] = val;
+                    return compiled.evaluate(scope);
+                };
+                const fPrimeExpr = math.derivative(intersectionExpr, variable).toString();
+                const compiledPrime = math.compile(fPrimeExpr);
+                const fPrime = (val) => {
+                    let scope = { ...scopeEnv }; scope[variable] = val;
+                    return compiledPrime.evaluate(scope);
+                };
+
+                const roots = [];
+                const numSamples = 200;
+                const start = -10, end = 10;
+                const step = (end - start) / numSamples;
+                let prevSign = null;
+
+                for (let k = 0; k <= numSamples; k++) {
+                    const x = start + k * step;
+                    const y = f(x);
+                    const sign = Math.sign(y);
+
+                    if (prevSign !== null && sign !== prevSign && sign !== 0) {
+                        let root = x - step / 2;
+                        let iter = 0;
+                        while (Math.abs(f(root)) > 1e-7 && iter < 100) {
+                            let df = fPrime(root);
+                            if (df === 0) break;
+                            root = root - f(root) / df;
+                            iter++;
+                        }
+                        if (Math.abs(f(root)) <= 1e-5) {
+                            if (!roots.some(r => Math.abs(r - root) < 1e-4)) {
+                                roots.push(root);
+                            }
+                        }
+                    } else if (Math.abs(y) <= 1e-7) {
+                        if (!roots.some(r => Math.abs(r - x) < 1e-4)) {
+                            roots.push(x);
+                        }
+                    }
+                    prevSign = sign !== 0 ? sign : prevSign;
+                }
+
+                roots.forEach(root => {
+                    let scope = {}; scope[variable] = root;
+                    points.push({ x: root, y: math.evaluate(ex1, scope) });
+                });
+            }
+        }
+
+        const uniquePoints = [];
+        points.forEach(p => {
+            if (!uniquePoints.some(up => Math.abs(up.x - p.x) < 1e-4 && Math.abs(up.y - p.y) < 1e-4)) {
+                uniquePoints.push(p);
+            }
         });
 
-        res.json({ points });
+        res.json({ points: uniquePoints });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

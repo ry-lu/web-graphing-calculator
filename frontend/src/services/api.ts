@@ -38,7 +38,7 @@ export const solveDifferentialEquation = async (params: {
     return res.data;
 };
 
-export const findIntersections = async (expr1: string, expr2: string, variable: string, assignments: string) => {
-    const res = await axios.post(`${API_URL}/intersections`, { expr1, expr2, variable, assignments });
+export const findIntersections = async (exprs: string[], variable: string, assignments: string) => {
+    const res = await axios.post(`${API_URL}/intersections`, { exprs, variable, assignments });
     return res.data.points;
 };

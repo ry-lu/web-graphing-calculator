@@ -156,12 +156,12 @@ function App() {
      */
     const handleFindIntersections = async () => {
         const exprs = expression.split(',').map(e => e.trim()).filter(e => e);
-        if (exprs.length !== 2) {
-            setResult('Error: Please enter exactly two expressions separated by a comma to find their intersection.');
+        if (exprs.length < 2) {
+            setResult('Error: Please enter at least two expressions separated by a comma to find their intersection.');
             return;
         }
         try {
-            const points = await apiFindIntersections(exprs[0], exprs[1], variable, assignments);
+            const points = await apiFindIntersections(exprs, variable, assignments);
             setIntersections(points);
         } catch (err: any) {
             setResult('Error: ' + (err.response?.data?.error || err.message));
@@ -431,7 +431,7 @@ function App() {
                                 onClick={handleFindIntersections}
                                 className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-4 px-6 rounded-xl transition-all shadow-sm hover:shadow active:scale-[0.98] mt-4"
                             >
-                                Find Intersections (for 2 properties)
+                                Find Intersections
                             </button>
                         )}
                     </div>
