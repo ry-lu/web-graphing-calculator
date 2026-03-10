@@ -1,0 +1,26 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "vitest run",
+        "dev": "node server.js",
+        "docs": "jsdoc src/**/*.js server.js -d docs"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "cors": "^2.8.6",
+        "dotenv": "^17.3.1",
+        "express": "^5.2.1",
+        "mathjs": "^15.1.1"
+    },
+    "devDependencies": {
+        "jsdoc": "^4.0.5",
+        "supertest": "^7.2.2",
+        "vitest": "^4.0.18"
+    }
+}
