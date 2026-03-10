@@ -2,6 +2,28 @@ const { create, all } = require('mathjs');
 
 const math = create(all);
 
+// Save references to programmatic functions before overriding them
+const _evaluate = math.evaluate;
+const _parse = math.parse;
+const _simplify = math.simplify;
+const _derivative = math.derivative;
+
+// Prevent arbitrary execution vulnerabilities inside user mathematical expressions
+math.import({
+    'import': function () { throw new Error('Function import is disabled for security reasons.') },
+    'createUnit': function () { throw new Error('Function createUnit is disabled for security reasons.') },
+    'evaluate': function () { throw new Error('Function evaluate is disabled for security reasons.') },
+    'parse': function () { throw new Error('Function parse is disabled for security reasons.') },
+    'simplify': function () { throw new Error('Function simplify is disabled for security reasons.') },
+    'derivative': function () { throw new Error('Function derivative is disabled for security reasons.') }
+}, { override: true });
+
+// Restore programmatic references to allow backend computations to use them without exposing them to the user's expression input mapping
+math.evaluate = _evaluate;
+math.parse = _parse;
+math.simplify = _simplify;
+math.derivative = _derivative;
+
 /**
  * Parses user-provided assignment strings to populate a math.js evaluation scope.
  * 
